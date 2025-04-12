@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
+
 const app = express();
 
 // middlewares 
@@ -21,6 +22,9 @@ app.use(express.static('public'))//for files mainli images
 app.use(cookieParser())
 
 
+import { router } from "./routes/user.routes.js"
 
+// routes declaration 
+app.use("/api/v1/users" , router) // /users/register , /users/login , /users/logout
 
 export { app } 
