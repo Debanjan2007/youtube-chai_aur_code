@@ -1,5 +1,5 @@
 import mongoose , {Schema} from "mongoose";
-import { jsonwebtoken, JsonWebTokenError } from "jsonwebtoken";
+import jwt from "jsonwebtoken"; 
 import bcrypt from "bcrypt";
 import e from "express";
 
@@ -32,7 +32,7 @@ new userSchema = new Schema({
     coverImage : {
         type: String,
     },
-    watcHistory : [
+    watchHistory : [
         {
             type: Schema.Types.ObjectId,
             ref: "Video",
@@ -49,11 +49,11 @@ new userSchema = new Schema({
     
 }, {timestamps : true}) ;
 
-userSchema.pre("save" , async function (req , res , next) {
+userSchema.pre("save" , async function (req , res , next) { //mainly uses for any validation in the server
     if(!this.isModified("password")){ 
         return next();
     }
-    this.password = bcrypt.hash(this.password , 10 );
+    this.password = await bcrypt.hash(this.password , 10 ); // 10 defers how many salts shoukd be there ?? 
     next();
 })
 
@@ -62,7 +62,7 @@ userSchema.methods.isPasswordCorrect = async function(password){
 }
 
 userSchema.methods.generateAccessToken = async function(){
-    return await JsonWebTokenError.sign({
+    return await jwt.sign({
         _id: this._id,
         email: this.email,
         userName: this.userName,
@@ -75,8 +75,8 @@ userSchema.methods.generateAccessToken = async function(){
 )
 }
 
-userSchema.methods.refreshToken = async function(){
-    return await JsonWebTokenError.sign({
+userSchema.methods.generateRefreshToken = async function(){
+    return await jwt.sign({
         _id: this._id,
     },
     process.env.REFRESH_TOKEN_SECRET ,
