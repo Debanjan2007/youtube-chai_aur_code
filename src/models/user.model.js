@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import e from "express";
 
-new userSchema = new Schema({
+const userSchema = new Schema({
     userName : {
         type: String,
         required: true,

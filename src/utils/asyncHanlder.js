@@ -9,7 +9,7 @@ const asyncHsndler = (requestHandler) => {
 
 export {asyncHsndler} 
 
-// wraper function for async function to handle errors
+// (wraper function for async function to handle errors
 // const asyncHsndler = (fn) => async (req , res , next) => {
 // try{
     // await fn(req , res , next) ;
@@ -19,4 +19,4 @@ export {asyncHsndler}
 //         msg : err.message || "Internal Server Error",
 //     })
 // }
-// }
+// })();
