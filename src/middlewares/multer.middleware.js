@@ -1,16 +1,26 @@
-import multer from "multer"; 
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
+const tempDir = path.join(
+  path.resolve(path.dirname(new URL(import.meta.url).pathname).replace(/^\/([a-zA-Z]:)/, '$1')),
+  "../public/temp"
+);
+
+// Ensure the directory exists
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, "./public/temp")
-    },
-    filename: function (req, file, cb) {
-      cb(null, file.originalname)
-    }
-  })
-  
+  destination: function (req, file, cb) {
+    cb(null, tempDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `${file.fieldname}-${uniqueSuffix}-${file.originalname}`);
+  }
+});
 
-  export const upload = multer({ storage , })
+export const upload = multer({ storage: storage });
 
-  

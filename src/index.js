@@ -1,12 +1,12 @@
 // require('dotenv').config({path: './env'})
 
 import dotenv from "dotenv";
-import {connectDB} from "./db/index.js";
+import {connectDB} from "./db/connection.db.js";
 import { app } from "./app.js";
 const port = process.env.PORT || 6000 ;
 
 
-dotenv.config({path: './env'})
+dotenv.config({path: './.env'})
 
 // CORS = Cross Origin Reource Sharing
 connectDB()//returns promise so the .then & .catch is needed 
