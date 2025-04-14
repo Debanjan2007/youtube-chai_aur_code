@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 
 const tempDir = path.join(
-  path.resolve(path.dirname(new URL(import.meta.url).pathname).replace(/^\/([a-zA-Z]:)/, '$1')),
+  path.dirname(decodeURIComponent(new URL(import.meta.url).pathname)).replace(/^\/([a-zA-Z]:)/, '$1'),
   "../public/temp"
 );
 

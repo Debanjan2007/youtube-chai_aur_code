@@ -36,7 +36,6 @@ const registerUser = asyncHsndler(async (req , res) => {
     }
 
     // if user exists 
-    // console.log(`user object :  ${User}`)
     const existedUser = await User.findOne({ // User object is returned from the mongoose schema 
         $or : [{ email } , { userName }]
     })
@@ -46,23 +45,24 @@ const registerUser = asyncHsndler(async (req , res) => {
         throw new ApiError(409 , "User already exists")
     }
 
-    const avatarLocalPath = req.files?.avatar[0]?.path ;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path ; 
+    const avatarLocalPath = await req.files?.avatar[0]?.path ;
+    const coverImageLocalPath = await req.files?.coverImage[0]?.path ; 
+    
 
     if(!avatarLocalPath){
         throw new ApiError(400 , "Avatar file is required") ;
     }
     const avatar = await uploadOnCloudinary(avatarLocalPath) ;
     const coverImage = await uploadOnCloudinary(coverImageLocalPath) ;
-    console.log(`avatar is ${avatar} \n coverImage is ${coverImage}`);
-    
+
     if(!avatar){
+        console.log("can't get avatar so sending error!!")
         throw new ApiError(400 , "Avatar file is required") ;
     }
     const user = await User.create({
         fullName ,
-        avatar: avatar.url ,
-        coverImage: coverImage?.url || "" ,
+        avatar: avatar ,
+        coverImage: coverImage || "" ,
         email,
         password,
         userName: userName.trim().toLowerCase()

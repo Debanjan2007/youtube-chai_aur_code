@@ -1,7 +1,6 @@
 import mongoose , {Schema} from "mongoose";
 import jwt from "jsonwebtoken"; 
 import bcrypt from "bcrypt";
-import e from "express";
 
 const userSchema = new Schema({
     userName : {
@@ -27,7 +26,7 @@ const userSchema = new Schema({
     },
     avatar : {
         type: String, //clodnary url service will be used to store as image for free
-        required: true,
+        required: [true, 'avatar is required'],
     },
     coverImage : {
         type: String,
@@ -51,10 +50,10 @@ const userSchema = new Schema({
 
 userSchema.pre("save" , async function (req , res , next) { //mainly uses for any validation in the server
     if(!this.isModified("password")){ 
-        return next();
+        return next;
     }
     this.password = await bcrypt.hash(this.password , 10 ); // 10 defers how many salts shoukd be there ?? 
-    next();
+    next;
 })
 
 userSchema.methods.isPasswordCorrect = async function(password){
