@@ -5,18 +5,24 @@ import { uploadOnCloudinary } from "../utils/cloudinary.service.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import fs from 'fs' ;
 
+const generateAccessAndRefreshTokens = async (userId) => {
+    try {
+        const user = await User.findById(userId) ;
+        const accessToken = user.generateAccessToken() ;
+        const refreshToken = user.generateRefreshToken() ;
+
+        user.refreshToken = refreshToken ; 
+        await user.save({validateBeforeSave : false}) ; 
+
+        return {accessToken , refreshToken}
+    } catch (error) {
+        throw new ApiError(500 , "Something went wrong while creating tokens")
+    }
+}
+
+
 const registerUser = asyncHsndler(async (req , res) => {
-    // registration of user algo
-    // production base mindset
-    // 1 :) get user details from frontend  (according to schema) 
-    // 2 :) validation - not empty or any other issue from the front end part 
-    // 3 :) Check if user already exists : usernaem , email 
-    // 4 :) Check for images , also for avatar 
-    // 5 :) upload them to cloudinary , avatar 
-    // 6 :) Create user object - create entry in db
-    // 7 :) remove password and refresh token field from response
-    // 8 :) check for user creation 
-    // 9 :) return response or sent error 
+   
 
 
    const {userName , fullName , email , password} = req.body ;
@@ -52,7 +58,7 @@ const registerUser = asyncHsndler(async (req , res) => {
     if(req.files && !req.files.avatar === null){
         avatarLocalPath = await req.files.avatar[0].path ;
     }
-
+    
 
     if(!avatarLocalPath){
         throw new ApiError(400 , "Avatar file is required") ;
@@ -88,4 +94,71 @@ const registerUser = asyncHsndler(async (req , res) => {
     )
 })
 
-export { registerUser }
+
+// user login 
+// req body -> data 
+// email & password
+// find the user 
+// check password 
+// access & refresh token send to the user 
+// send cookies 
+
+const loginUser = asyncHsndler( async (req , res) => {
+    const {email , userName , password} = req.body ;
+    
+    if (!userName || !email) {
+        throw new ApiError(400 , "User Name or email needed") ; 
+    }
+
+    const user = await User.findOne({
+        $or : [{userName} , {email}]
+    }) 
+
+    if(!user){
+        throw new ApiError(404 , "User does not exist") ;
+    }
+    const isPasswordvalid = await user.isPasswordCorrect(password) ;
+
+    if(!isPasswordvalid){
+        throw new ApiError(401 , "Invalid user credentials!") ;
+    }
+    const {accessToken , refreshToken} = await generateAccessAndRefreshTokens(user._id) ; 
+
+    // user.refreshToken = refreshToken ;
+    // user.select(
+    //     "-password -refreshToken"
+    // )
+    const logedinUser = await User.findById(user._id).select(
+        "-password -refreshToken"
+    ); 
+
+    // sending cookies 
+
+    const options = {
+        httpOnly: true ,
+        secure: true 
+    }
+
+    return res
+    .status(200)
+    .cookie("accessToken" , accessToken , options)
+    .cookie("refreshToken" , refreshToken , options)
+    .json(
+        new ApiResponse(
+            200 , {
+                user : logedinUser , accessToken , refreshToken 
+            } ,
+                "User loged in successfully" 
+        )
+    )
+})
+
+// logedout 
+const logeoutUser = asyncHsndler( async(req , res) => {
+    
+})
+
+export { 
+    registerUser ,
+    loginUser        
+}

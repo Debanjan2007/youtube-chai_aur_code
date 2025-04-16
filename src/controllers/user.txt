@@ -1,0 +1,25 @@
+ registration of user algo :
+    production base mindset
+    1 :) get user details from frontend  (according to schema) 
+    2 :) validation - not empty or any other issue from the front end part 
+    3 :) Check if user already exists : usernaem , email 
+    4 :) Check for images , also for avatar 
+    5 :) upload them to cloudinary , avatar 
+    6 :) Create user object - create entry in db
+    7 :) remove password and refresh token field from response
+    8 :) check for user creation 
+    9 :) return response or sent error 
+
+user login algo : 
+1 :) get user data from req.body {email , password , refreshToken}
+2 :) check if the user exists if yes return its refreshToken 
+3 :) for the specific _id check if the refresh token matches and the password 
+4 :) if matches then give the user the access of the account and give him a accessToken
+
+
+req body -> data 
+email & password
+find the user 
+check password 
+access & refresh token send to the user 
+send cookies 
