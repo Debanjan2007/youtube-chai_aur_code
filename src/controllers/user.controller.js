@@ -3,15 +3,10 @@ import {ApiError} from "../utils/apiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.service.js"
 import { ApiResponse } from "../utils/apiResponse.js"
+import fs from 'fs' ;
 
 const registerUser = asyncHsndler(async (req , res) => {
-    // registration of user
-    // my mind set 
-    // 1 :) user fills the form and send a post request to the server 
-    // 2 :) server responds and cecks at the databaase if the user already exists if not then carry forword  if yes then send a response that "already user exists with this email"
-    // 3 :) then mongoDB add a user with the help of userSchema and a response is sent to the user as "user created successful"
-    // 4 :) if any error occurs in between these operations then it should resolved with try catch  
-
+    // registration of user algo
     // production base mindset
     // 1 :) get user details from frontend  (according to schema) 
     // 2 :) validation - not empty or any other issue from the front end part 
@@ -22,6 +17,7 @@ const registerUser = asyncHsndler(async (req , res) => {
     // 7 :) remove password and refresh token field from response
     // 8 :) check for user creation 
     // 9 :) return response or sent error 
+
 
    const {userName , fullName , email , password} = req.body ;
 
@@ -44,24 +40,36 @@ const registerUser = asyncHsndler(async (req , res) => {
         console.log(existedUser);
         throw new ApiError(409 , "User already exists")
     }
-
-    const avatarLocalPath = await req.files?.avatar[0]?.path ;
-    const coverImageLocalPath = await req.files?.coverImage[0]?.path ; 
     
+
+    // TypeError: Cannot read properties of undefined (reading '0') these types of error sometime occurs due to the use of the "?" marks
+    
+    const coverImageLocalPath = 0;
+    const avatarLocalPath = 0 ;
+    if(req.files && !req.files.coverImage === null){
+        coverImageLocalPath = await req.files.coverImage[0].path ;
+    }
+    if(req.files && !req.files.avatar === null){
+        avatarLocalPath = await req.files.avatar[0].path ;
+    }
+
 
     if(!avatarLocalPath){
         throw new ApiError(400 , "Avatar file is required") ;
     }
+
     const avatar = await uploadOnCloudinary(avatarLocalPath) ;
     const coverImage = await uploadOnCloudinary(coverImageLocalPath) ;
+    
 
     if(!avatar){
         console.log("can't get avatar so sending error!!")
         throw new ApiError(400 , "Avatar file is required") ;
     }
-    const user = await User.create({
+
+    const user = await User.create({ //User got from schema 
         fullName ,
-        avatar: avatar ,
+        avatar: avatar,
         coverImage: coverImage || "" ,
         email,
         password,
@@ -71,9 +79,10 @@ const registerUser = asyncHsndler(async (req , res) => {
         "-password -refreshToken"
     ) ; 
     if(!createduserName) {
+        fs.unlinkSync(avatarLocalPath) ;
+        fs.unlinkSync(coverImageLocalPath) ;
          throw  new ApiError(501 , "Something went while creating user!") ;
     }
-
     return res.status(201).json(
         new ApiResponse(200 , createduserName , "User created successfully")
     )
