@@ -11,7 +11,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
         const accessToken = user.generateAccessToken() ;
         const refreshToken = user.generateRefreshToken() ;
 
-        user.refreshToken = refreshToken ; 
+        // user.refreshToken = refreshToken ; 
         await user.save({validateBeforeSave : false}) ; 
 
         return {accessToken , refreshToken}
@@ -51,14 +51,14 @@ const registerUser = asyncHsndler(async (req , res) => {
     // TypeError: Cannot read properties of undefined (reading '0') these types of error sometime occurs due to the use of the "?" marks
     
     const coverImageLocalPath = 0;
-    const avatarLocalPath = 0 ;
-    if(req.files && !req.files.coverImage === null){
-        coverImageLocalPath = await req.files.coverImage[0].path ;
+    const avatarLocalPath =  req.files.avatar[0].path;
+    if(!req.files.coverImage === null){
+        coverImageLocalPath = req.files.coverImage[0].path ;
+        
     }
-    if(req.files && !req.files.avatar === null){
-        avatarLocalPath = await req.files.avatar[0].path ;
-    }
-    
+    console.log(`\n coverImag : ${coverImageLocalPath} \n`);
+    console.log(req.files);
+    console.log(`\n avatar : ${avatarLocalPath}`);
 
     if(!avatarLocalPath){
         throw new ApiError(400 , "Avatar file is required") ;
@@ -104,15 +104,15 @@ const registerUser = asyncHsndler(async (req , res) => {
 // send cookies 
 
 const loginUser = asyncHsndler( async (req , res) => {
-    const {email , userName , password} = req.body ;
+    console.log(req.body);
     
-    if (!userName || !email) {
+    const {email, password} = req.body ;
+    
+    if (!email) {
         throw new ApiError(400 , "User Name or email needed") ; 
     }
 
-    const user = await User.findOne({
-        $or : [{userName} , {email}]
-    }) 
+    const user = await User.findOne({email}) 
 
     if(!user){
         throw new ApiError(404 , "User does not exist") ;
@@ -125,9 +125,7 @@ const loginUser = asyncHsndler( async (req , res) => {
     const {accessToken , refreshToken} = await generateAccessAndRefreshTokens(user._id) ; 
 
     // user.refreshToken = refreshToken ;
-    // user.select(
-    //     "-password -refreshToken"
-    // )
+    // user.select("-password -refreshToken")
     const logedinUser = await User.findById(user._id).select(
         "-password -refreshToken"
     ); 
@@ -155,10 +153,28 @@ const loginUser = asyncHsndler( async (req , res) => {
 
 // logedout 
 const logeoutUser = asyncHsndler( async(req , res) => {
-    
+    await User.findByIdAndUpdate(
+        req.user._id , 
+        {
+            $set: {
+                refreshToken : undefined ,
+            }
+        }
+    );
+    const options = {
+        httpOnly: true ,
+        secure: true 
+    }  
+
+    return res
+    .status(200)
+    .clearCookie("accessToken" , options)
+    .clearCookie("refreshToken" , options)
+    .json(new ApiResponse(200 ,  "User logedout successfully"))
 })
 
 export { 
     registerUser ,
-    loginUser        
+    loginUser ,
+    logeoutUser
 }

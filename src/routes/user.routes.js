@@ -1,7 +1,8 @@
 import express , {Router} from "express"; 
-import {registerUser} from "../controllers/user.controller.js"
+import {logeoutUser, loginUser, registerUser} from "../controllers/user.controller.js"
 import { upload } from "../middlewares/multer.middleware.js"
-
+import {verifyJwt} from "../middlewares/auth.middleware.js"
+import multer from "multer";
 const router = Router() ;
 
 router.route("/register")
@@ -17,6 +18,14 @@ router.route("/register")
         }
     ]) ,
     registerUser);
+    const uploadLOgUser = multer() ;
+router.route("/login")
+.post(uploadLOgUser.none() , loginUser)
+
+// secured routes 
+router.route("/logout").post(
+    verifyJwt ,
+    logeoutUser) ;
 
 
 export {router}   ;

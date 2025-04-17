@@ -1,18 +1,33 @@
-import { User } from "../models/user.model";
-import { ApiError } from "../utils/apiError";
-import { asyncHsndler } from "../utils/asyncHanlder";
+import { User } from "../models/user.model.js";
+import { ApiError } from "../utils/apiError.js";
+import { asyncHsndler } from "../utils/asyncHanlder.js";
 import jwt from "jsonwebtoken"
 
-export const verifyJwt =  asyncHsndler( async (req , res , next) => {
-    const token = await req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer", "")
-    if(!token){
-        throw new ApiError(401 , "Unauthorised request");
-    }
-    const decodedInfo = jwt.verify(token , process.env.ACCESS_TOKEN_SECRET)
-
-    const user = await User.findById(decodedInfo?._id).select("-password -refreshToken");
-    // todo use of the refresh token 
-    if(!user){
-        throw new ApiError(401 , "invalid access Token")
+const verifyJwt =  asyncHsndler( async (req , _ , next) => {
+    try {
+        console.log(`\n`);
+        console.log(req.cookies.refreshToken);
+        console.log(`\n`);
+        const token = await req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer", "")
+        if(!token){
+            throw new ApiError(401 , "Unauthorised request");
+        }
+        const decodedInfo = jwt.verify(token , process.env.ACCESS_TOKEN_SECRET)
+    
+        const user = await User.findById(decodedInfo?._id).select("-password -refreshToken");
+    
+        if(!user){
+            throw new ApiError(401 , "invalid access Token")
+        }
+    
+        req.user = user ;
+        console.log(req.user);
+        next ; 
+    } catch (error) {
+        throw new ApiError(401 , error?.message || "Invalid access token")
     }
 })
+
+export {
+    verifyJwt
+}
