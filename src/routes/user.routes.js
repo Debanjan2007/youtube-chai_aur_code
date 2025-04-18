@@ -1,5 +1,5 @@
 import express , {Router} from "express"; 
-import {logeoutUser, loginUser, registerUser} from "../controllers/user.controller.js"
+import {logeoutUser, loginUser, registerUser ,refreshAccessToken} from "../controllers/user.controller.js"
 import { upload } from "../middlewares/multer.middleware.js"
 import {verifyJwt} from "../middlewares/auth.middleware.js"
 import multer from "multer";
@@ -26,6 +26,7 @@ router.route("/login")
 router.route("/logout").post(
     verifyJwt ,
     logeoutUser) ;
-
+router.route("/refresToken").post(refreshAccessToken)
+// 
 
 export {router}   ;

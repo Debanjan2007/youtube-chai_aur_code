@@ -11,6 +11,7 @@ app.use(cors({
     credentials : true,
 })
 )
+app.use(cookieParser())
 app.use(express.json({//data comming from json
     limit: '16kb',
 }))
@@ -19,7 +20,7 @@ app.use(express.urlencoded({//data comming from url
     limit: '16kb',
 }))
 app.use(express.static('public'))//for files mainli images
-app.use(cookieParser())
+
 
 
 import { router } from "./routes/user.routes.js"

@@ -5,11 +5,10 @@ import jwt from "jsonwebtoken"
 
 const verifyJwt =  asyncHsndler( async (req , _ , next) => {
     try {
-        console.log(`\n`);
-        console.log(req.cookies.refreshToken);
-        console.log(`\n`);
-        const token = await req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer", "")
-        if(!token){
+
+        const token = req.cookies?.accessToken || req.header("Authorization")?.replace(/^Bearer\s+/i, "").trim()
+        
+        if(!token || typeof(token) !== "string"){
             throw new ApiError(401 , "Unauthorised request");
         }
         const decodedInfo = jwt.verify(token , process.env.ACCESS_TOKEN_SECRET)
@@ -21,8 +20,7 @@ const verifyJwt =  asyncHsndler( async (req , _ , next) => {
         }
     
         req.user = user ;
-        console.log(req.user);
-        next ; 
+        next() ; 
     } catch (error) {
         throw new ApiError(401 , error?.message || "Invalid access token")
     }
