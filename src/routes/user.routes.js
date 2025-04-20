@@ -1,5 +1,12 @@
 import express , {Router} from "express"; 
-import {logeoutUser, loginUser, registerUser ,refreshAccessToken} from "../controllers/user.controller.js"
+import {registerUser ,
+    loginUser ,
+    logeoutUser ,
+    refreshAccessToken , 
+    changeCurrentPassword , 
+    getCurrentUser , 
+    updateAccountdetails , 
+    updateImage} from "../controllers/user.controller.js"
 import { upload } from "../middlewares/multer.middleware.js"
 import {verifyJwt} from "../middlewares/auth.middleware.js"
 import multer from "multer";
@@ -27,6 +34,20 @@ router.route("/logout").post(
     verifyJwt ,
     logeoutUser) ;
 router.route("/refresToken").post(refreshAccessToken)
-// 
+
+// updating user details 
+router.route("/update/password").post(
+    verifyJwt ,
+    changeCurrentPassword
+)
+router.route("/update/accounts").post(
+    verifyJwt , 
+    updateAccountdetails
+)
+
+router.route("/update/image").post(
+    verifyJwt , 
+    updateImage
+)
 
 export {router}   ;
