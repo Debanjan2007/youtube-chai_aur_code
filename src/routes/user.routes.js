@@ -25,27 +25,33 @@ router.route("/register")
         }
     ]) ,
     registerUser);
-    const uploadLOgUser = multer() ;
+const uploadLOgUser = multer() ;
 router.route("/login")
 .post(uploadLOgUser.none() , loginUser)
 
 // secured routes 
 router.route("/logout").post(
+    uploadLOgUser.none(),
     verifyJwt ,
     logeoutUser) ;
 router.route("/refresToken").post(refreshAccessToken)
 
+
 // updating user details 
 router.route("/update/password").post(
+    uploadLOgUser.none(),
     verifyJwt ,
     changeCurrentPassword
 )
+
 router.route("/update/accounts").post(
+    uploadLOgUser.none() ,
     verifyJwt , 
     updateAccountdetails
 )
 
 router.route("/update/image").post(
+    uploadLOgUser.none(),
     verifyJwt , 
     updateImage
 )

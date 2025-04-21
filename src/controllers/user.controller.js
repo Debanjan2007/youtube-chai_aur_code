@@ -5,6 +5,9 @@ import { uploadOnCloudinary } from "../utils/cloudinary.service.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import fs from 'fs' ;
 import  jwt  from 'jsonwebtoken';
+import {stringify} from "flatted" ; 
+ // won't crash, but might still be messy
+
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -12,7 +15,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
         const accessToken = await user.generateAccessToken() ;
         const refreshToken = await user.generateRefreshToken() ;
 
-        // user.refreshToken = refreshToken ; 
+        user.refreshToken = refreshToken ; 
         await user.save({validateBeforeSave : false}) ; 
 
         return {accessToken , refreshToken}
@@ -127,7 +130,7 @@ const loginUser = asyncHsndler( async (req , res) => {
     // user.refreshToken = refreshToken ;
     // user.select("-password -refreshToken")
     const logedinUser = await User.findById(user._id).select(
-        "-password -refreshToken"
+        "-password -refreshToken -accessToken"
     );     
     // sending cookies 
 
@@ -219,7 +222,7 @@ try {
 
 // password change 
 const changeCurrentPassword = asyncHsndler( async (req , res) => {
-    console.log(req);
+    console.log(req.body);
     
     const {oldPassword , newPassword} = req.body ;
 
@@ -250,18 +253,16 @@ const updateAccountdetails = asyncHsndler( async (req , res) => {
     if(!fullName || !email){
         throw new ApiError(400 , "All fields are required");
     }
-    const user = User.findByIdAndUpdate(
-        req.user._id , 
-        {
-            $set: {
-                fullName ,
-                email ,
-            }
-        }, 
-        {
-            new: true
-        }
-    ).select("-password -refreshToken")
+    const existedUser = await User.findById(req.user._id) ;
+
+    existedUser.email = email ;
+    existedUser.fullName = fullName ;
+
+    await existedUser.save({validateBeforeSave: false}) ;   
+    // console.log(stringify(mongoClient));
+    const user = await User.findById(existedUser._id).select(
+        "-password -refreshToken"
+    )
     return res
     .status(200)
     .json(
