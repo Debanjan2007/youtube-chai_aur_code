@@ -51,7 +51,16 @@ router.route("/update/accounts").post(
 )
 
 router.route("/update/image").post(
-    uploadLOgUser.none(),
+    upload.fields([
+        {
+        name: "avatar",
+        maxCount: 1
+        },
+        {
+            name: "coverImage" ,
+            maxCount: 1
+        }
+    ]),
     verifyJwt , 
     updateImage
 )

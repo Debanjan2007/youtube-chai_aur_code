@@ -6,6 +6,9 @@ import { ApiResponse } from "../utils/apiResponse.js"
 import fs from 'fs' ;
 import  jwt  from 'jsonwebtoken';
 import {stringify} from "flatted" ; 
+import mongoose from 'mongoose';
+import { pipeline } from 'stream';
+import { json } from 'stream/consumers';
  // won't crash, but might still be messy
 
 
@@ -221,9 +224,7 @@ try {
 })
 
 // password change 
-const changeCurrentPassword = asyncHsndler( async (req , res) => {
-    console.log(req.body);
-    
+const changeCurrentPassword = asyncHsndler( async (req , res) => {    
     const {oldPassword , newPassword} = req.body ;
 
     const user = await User.findById(req.user?._id) ;
@@ -277,7 +278,7 @@ const updateAccountdetails = asyncHsndler( async (req , res) => {
 const updateImage = asyncHsndler( async (req , res) => {
     // take avatar local path from the req.files 
     // upload on cloudinary & return the url 
-    // make a database query to update user avatar 
+    // make a database query to update user avatar     
     const avatarLocalPath = req.files?.avatar[0].path || "";  
     const coverImageLocalPath =  req.files?.coverImage[0].path || "" ;
 
@@ -287,19 +288,11 @@ const updateImage = asyncHsndler( async (req , res) => {
     }
     const avatar = await uploadOnCloudinary(avatarLocalPath) || "";
     const coverImage = await uploadOnCloudinary(coverImageLocalPath) || "" ;
-    if(avatar){
-        fs.unlink(avatarLocalPath) ;
-    }else if(coverImage){
-        fs.unlink(coverImageLocalPath)
-    }else{
-        fs.unlink(coverImageLocalPath) ;
-        fs.unlink(avatarLocalPath) ;
-    }
 
-    if(!avatar || !coverImage){
+    if(!(avatar && coverImage)){
         throw new ApiError(501 , "server can't save the avatar now!")
     }
-    const user = User.findByIdAndUpdate(req.user._id ,
+    const user = await User.findByIdAndUpdate(req.user._id ,
         {
             $set: {
                 avatar , 
@@ -316,6 +309,128 @@ const updateImage = asyncHsndler( async (req , res) => {
         new ApiResponse(200 , user , "User Avatar created successfully")
     )
 })
+
+const getUSerChanelProfile = asyncHsndler( async (req , res) => {
+    const {userName} = req.params
+    if(!userName?.trim()){
+        throw new ApiError(400 , "User name is required") ;
+    }
+
+    const chanel = await User.aggregate([ //it returns an array of objects
+        {
+            $match: {
+                userName: userName?.trim().toLowerCase() 
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions" ,
+                localField: "_id" ,
+                foreignField: "chanel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup:{
+                from: "subscriptions" ,
+                localField: "_id" ,
+                foreignField: "subsciber",
+                as: "subscriberedTo"
+            }
+        },
+        {
+            $addFields: {
+                subscribersCount: { $size: "$subscribers" },
+                subscriberedToCount: { $size: "$subscriberedTo" },
+                isSubscribed: {
+                    $cond: {
+                        if:{
+                            $in: [req.user?._id , "$subscribers.subsciber"]
+                        },
+                        then:  true ,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                fullName: 1 ,
+                userName: 1 ,
+                avatar: 1 ,
+                coverImage: 1 ,
+                subscribersCount: 1 ,
+                subscriberedToCount: 1 ,
+                isSubscribed: 1 ,
+                email: 1
+            }
+        }
+    ])
+
+    console.log(chanel);
+
+    if(!chanel?.length){
+        throw new ApiError(404 , "Chanel not exist") ;
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200 , chanel[0] , "user chanel fetched successfully")
+    )
+})
+const getWatchHistory = asyncHsndler(async (req , res) => {
+    const user = await User.aggregat(
+        [
+            {
+                $match: {
+                    _id: new mongoose.Types.ObjectId(req.user._id)
+                },
+                $lookup: {
+                    from: "videos",
+                    localField: "watchHistory",
+                    foreignField: "_id",
+                    as: "watchHistory",
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: "users",
+                                localField: "user",
+                                foreignField: "_id",
+                                as: "owner",
+                                pipeline: [
+                                    {
+                                        $project:
+                                        {
+                                            _id: 1,
+                                            fullName: 1,
+                                            userName: 1,
+                                            avatar: 1
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                        }
+                    ] 
+                }
+            }
+        ]
+    )
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200 ,
+             user[0]?.watchHistory , 
+             "User watch history fetched successfully")
+    )
+})
 export { 
     registerUser ,
     loginUser ,
@@ -324,5 +439,7 @@ export {
     changeCurrentPassword , 
     getCurrentUser , 
     updateAccountdetails , 
-    updateImage
+    updateImage ,
+    getUSerChanelProfile,
+    getWatchHistory
 }
